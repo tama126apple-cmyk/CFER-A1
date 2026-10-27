@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CEFR A1 英単語クイズ (Oxford 3000)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Noto Sans JP -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムアニメーション */
+        @keyframes pulse-success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        @keyframes shake-error {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-6px); }
+            40%, 80% { transform: translateX(6px); }
+        }
+        .animate-success {
+            animation: pulse-success 0.3s ease-in-out;
+        }
+        .animate-error {
+            animation: shake-error 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+
+    <!-- ヘッダー -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+        <div class="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <span class="bg-brand-500 text-white font-bold text-xs px-2.5 py-1 rounded-full uppercase tracking-wider">CEFR A1</span>
+                <h1 class="text-lg md:text-xl font-bold text-slate-800">Oxford 3000 英単語クイズ</h1>
+            </div>
+            <div id="header-score" class="text-sm font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                Score: <span id="current-score-text" class="text-brand-600 font-bold">0</span> / 10
+            </div>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="w-full max-w-xl">
+
+            <!-- スタート画面 -->
+            <div id="start-screen" class="bg-white rounded-2xl p-6 md:p-8 shadow-xl border border-slate-100 text-center space-y-6">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-brand-50 text-brand-500 rounded-full mb-2">
+                    <i class="fa-solid fa-graduation-cap text-3xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-2">英単語クイズに挑戦！</h2>
+                    <p class="text-slate-600 text-sm md:text-base leading-relaxed">
+                        CEFR A1レベル（英検5級〜4級相当）の頻出英単語からランダムで10問出題されます。<br>発音を聴きながら正しい意味を選びましょう！
+                    </p>
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/80 text-left space-y-2 text-xs md:text-sm text-slate-600">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-check text-brand-500"></i>
+                        <span>出題数：10問（選択式4択）</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-volume-high text-brand-500"></i>
+                        <span>ネイティブ標準音声の再生機能つき</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-rotate text-brand-500"></i>
+                        <span>終了後に間違えた単語をしっかり復習</span>
+                    </div>
+                </div>
+
+                <button id="start-btn" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold text-lg rounded-xl shadow-lg shadow-brand-500/30 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 active:shadow-none">
+                    スタート！ <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+
+            <!-- クイズ画面 -->
+            <div id="quiz-screen" class="hidden bg-white rounded-2xl p-6 md:p-8 shadow-xl border border-slate-100 space-y-6">
+                
+                <!-- プログレスバー -->
+                <div>
+                    <div class="flex justify-between items-center text-xs font-bold text-slate-500 mb-2">
+                        <span>QUESTION <span id="q-number" class="text-brand-500">1</span> OF 10</span>
+                        <span id="progress-percent">10%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="bg-brand-500 h-full w-1/10 transition-all duration-300"></div>
+                    </div>
+                </div>
+
+                <!-- 単語カード -->
+                <div id="word-card" class="bg-slate-50 rounded-2xl p-6 md:p-8 text-center border border-slate-200/70 relative">
+                    <span id="word-pos" class="inline-block bg-slate-200 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-md mb-3">
+                        [名詞]
+                    </span>
+                    <h2 id="word-text" class="text-3xl md:text-5xl font-extrabold text-slate-800 tracking-wide mb-4">
+                        apple
+                    </h2>
+                    
+                    <!-- 発音ボタン -->
+                    <button id="audio-btn" class="inline-flex items-center space-x-2 bg-white hover:bg-slate-100 text-brand-600 font-semibold text-sm px-4 py-2 rounded-full border border-slate-200 shadow-sm transition-all active:scale-95">
+                        <i class="fa-solid fa-volume-high"></i>
+                        <span>発音を聴く</span>
+                    </button>
+                </div>
+
+                <!-- 選択肢グループ -->
+                <div id="options-container" class="grid grid-cols-1 gap-3">
+                    <!-- JavaScriptでボタンを動的生成 -->
+                </div>
+
+                <!-- 次へボタン / フィードバック領域 -->
+                <div id="next-container" class="hidden pt-2">
+                    <button id="next-btn" class="w-full py-3.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+                        <span>次の問題へ</span>
+                        <i class="fa-solid fa-chevron-right text-sm"></i>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- 結果画面 -->
+            <div id="result-screen" class="hidden bg-white rounded-2xl p-6 md:p-8 shadow-xl border border-slate-100 space-y-6">
+                <div class="text-center space-y-3">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-amber-50 text-amber-500 rounded-full mb-1">
+                        <i class="fa-solid fa-trophy text-3xl"></i>
+                    </div>
+                    <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800">テスト結果</h2>
+                    <p class="text-slate-500 text-sm">お疲れ様でした！あなたのスコアはこちらです。</p>
+                    
+                    <div class="py-4 bg-slate-50 rounded-2xl border border-slate-200/80">
+                        <span class="text-slate-500 text-xs font-bold uppercase tracking-wider block mb-1">Score</span>
+                        <span id="final-score" class="text-4xl md:text-5xl font-black text-brand-600">8</span>
+                        <span class="text-xl font-bold text-slate-400"> / 10</span>
+                        <p id="score-comment" class="text-sm font-semibold text-slate-600 mt-2">素晴らしい結果です！</p>
+                    </div>
+                </div>
+
+                <!-- 間違えた単語リスト -->
+                <div id="review-section" class="space-y-3 border-t border-slate-200 pt-5">
+                    <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+                        <i class="fa-solid fa-book-open text-brand-500"></i>
+                        <span>復習リスト</span>
+                    </h3>
+                    <div id="review-list" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                        <!-- 間違えた単語がここに入ります -->
+                    </div>
+                </div>
+
+                <!-- ボタン -->
+                <button id="restart-btn" class="w-full py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold text-lg rounded-xl shadow-lg shadow-brand-500/30 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0">
+                    <i class="fa-solid fa-rotate-right mr-2"></i> もう一度挑戦する
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- フッター -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
+        CEFR A1 Wordlist based on Oxford 3000 | Designed for Web App
+    </footer>
+
+    <!-- クイズ制御JavaScript -->
+    <script>
+        // Oxford 3000 CEFR A1 単語データ (語彙, 品詞, 意味)
+        const wordList = [
+            { word: "a / an", pos: "冠詞", meaning: "ひとつの、ある〜" },
+            { word: "about", pos: "前置詞 / 副詞", meaning: "〜について、およそ" },
+            { word: "above", pos: "前置詞 / 副詞", meaning: "〜の上に、上記の" },
+            { word: "across", pos: "前置詞 / 副詞", meaning: "〜を横切って、向こう側に" },
+            { word: "action", pos: "名詞", meaning: "行動、動き" },
+            { word: "actor", pos: "名詞", meaning: "俳優" },
+            { word: "actress", pos: "名詞", meaning: "女優" },
+            { word: "add", pos: "動詞", meaning: "加える、足す" },
+            { word: "address", pos: "名詞", meaning: "住所、アドレス" },
+            { word: "adult", pos: "名詞", meaning: "大人、成人" },
+            { word: "advice", pos: "名詞", meaning: "アドバイス、忠告" },
+            { word: "afraid", pos: "形容詞", meaning: "恐れている、心配して" },
+            { word: "after", pos: "前置詞", meaning: "〜のあとに" },
+            { word: "afternoon", pos: "名詞", meaning: "午後" },
+            { word: "again", pos: "副詞", meaning: "もう一度、再び" },
+            { word: "age", pos: "名詞", meaning: "年齢、時代" },
+            { word: "ago", pos: "副詞", meaning: "〜前に" },
+            { word: "agree", pos: "動詞", meaning: "同意する、意見が一致する" },
+            { word: "air", pos: "名詞", meaning: "空気、大気" },
+            { word: "airport", pos: "名詞", meaning: "空港" },
+            { word: "all", pos: "代名詞 / 形容詞", meaning: "すべての、全部" },
+            { word: "also", pos: "副詞", meaning: "〜もまた、さらに" },
+            { word: "always", pos: "副詞", meaning: "いつも、常に" },
+            { word: "amazing", pos: "形容詞", meaning: "驚くべき、すばらしい" },
+            { word: "and", pos: "接続詞", meaning: "そして、〜と…" },
+            { word: "angry", pos: "形容詞", meaning: "怒った" },
+            { word: "animal", pos: "名詞", meaning: "動物" },
+            { word: "another", pos: "代名詞 / 形容詞", meaning: "もうひとつの、別の" },
+            { word: "answer", pos: "名詞 / 動詞", meaning: "答え、答える" },
+            { word: "any", pos: "代名詞 / 形容詞", meaning: "いくつかの、任意の" },
+            { word: "apartment", pos: "名詞", meaning: "アパート、マンション" },
+            { word: "apple", pos: "名詞", meaning: "りんご" },
+            { word: "April", pos: "名詞", meaning: "4月" },
+            { word: "area", pos: "名詞", meaning: "地域、面積" },
+            { word: "arm", pos: "名詞", meaning: "腕" },
+            { word: "around", pos: "前置詞 / 副詞", meaning: "〜の周りに、あちこちに" },
+            { word: "arrive", pos: "動詞", meaning: "到着する" },
+            { word: "art", pos: "名詞", meaning: "芸術、美術" },
+            { word: "article", pos: "名詞", meaning: "記事、項目" },
+            { word: "artist", pos: "名詞", meaning: "アーティスト、画家" },
+            { word: "ask", pos: "動詞", meaning: "尋ねる、頼む" },
+            { word: "at", pos: "前置詞", meaning: "〜で、〜に" },
+            { word: "August", pos: "名詞", meaning: "8月" },
+            { word: "aunt", pos: "名詞", meaning: "おば" },
+            { word: "autumn", pos: "名詞", meaning: "秋" },
+            { word: "baby", pos: "名詞", meaning: "赤ちゃん" },
+            { word: "back", pos: "名詞 / 副詞", meaning: "背中、後ろへ、戻って" },
+            { word: "bad", pos: "形容詞", meaning: "悪い、下手な" },
+            { word: "bag", pos: "名詞", meaning: "バッグ、袋" },
+            { word: "ball", pos: "名詞", meaning: "ボール、球" },
+            { word: "banana", pos: "名詞", meaning: "バナナ" },
+            { word: "band", pos: "名詞", meaning: "バンド、楽団" },
+            { word: "bank", pos: "名詞", meaning: "銀行、土手" },
+            { word: "bar", pos: "名詞", meaning: "バー、酒場、棒" },
+            { word: "baseball", pos: "名詞", meaning: "野球" },
+            { word: "basketball", pos: "名詞", meaning: "バスケットボール" },
+            { word: "bath", pos: "名詞", meaning: "入浴、風呂" },
+            { word: "bathroom", pos: "名詞", meaning: "浴室、トイレ" },
+            { word: "be", pos: "動詞", meaning: "〜である、存在する" },
+            { word: "beach", pos: "名詞", meaning: "ビーチ、砂浜" },
+            { word: "beautiful", pos: "形容詞", meaning: "美しい、きれいな" },
+            { word: "because", pos: "接続詞", meaning: "なぜなら〜だから" },
+            { word: "become", pos: "動詞", meaning: "〜になる" },
+            { word: "bed", pos: "名詞", meaning: "ベッド、寝台" },
+            { word: "bedroom", pos: "名詞", meaning: "寝室" },
+            { word: "beer", pos: "名詞", meaning: "ビール" },
+            { word: "before", pos: "前置詞 / 接続詞", meaning: "〜の前に" },
+            { word: "begin", pos: "動詞", meaning: "始まる、始める" },
+            { word: "beginning", pos: "名詞", meaning: "最初、始まり" },
+            { word: "behind", pos: "前置詞 / 副詞", meaning: "〜のうしろに" },
+            { word: "believe", pos: "動詞", meaning: "信じる" },
+            { word: "below", pos: "前置詞 / 副詞", meaning: "下に、〜の下方に" },
+            { word: "best", pos: "形容詞", meaning: "最も良い、一番の" },
+            { word: "better", pos: "形容詞", meaning: "より良い" },
+            { word: "between", pos: "前置詞", meaning: "（2つのものの）間に" },
+            { word: "bicycle / bike", pos: "名詞", meaning: "自転車" },
+            { word: "big", pos: "形容詞", meaning: "大きい" },
+            { word: "bill", pos: "名詞", meaning: "請求書、紙幣" },
+            { word: "bird", pos: "名詞", meaning: "鳥" },
+            { word: "birthday", pos: "名詞", meaning: "誕生日" },
+            { word: "black", pos: "形容詞 / 名詞", meaning: "黒い、黒" },
+            { word: "blog", pos: "名詞", meaning: "ブログ" },
+            { word: "blonde", pos: "形容詞", meaning: "金髪の" },
+            { word: "blue", pos: "形容詞 / 名詞", meaning: "青い、青" },
+            { word: "boat", pos: "名詞", meaning: "ボート、船" },
+            { word: "body", pos: "名詞", meaning: "体、身体" },
+            { word: "book", pos: "名詞 / 動詞", meaning: "本、予約する" },
+            { word: "boot", pos: "名詞", meaning: "ブーツ、靴" },
+            { word: "bored", pos: "形容詞", meaning: "退屈した" },
+            { word: "boring", pos: "形容詞", meaning: "退屈な、つまらない" },
+            { word: "born", pos: "動詞", meaning: "生まれる" },
+            { word: "bottle", pos: "名詞", meaning: "ボトル、瓶" },
+            { word: "box", pos: "名詞", meaning: "箱" },
+            { word: "boy", pos: "名詞", meaning: "男の子" },
+            { word: "boyfriend", pos: "名詞", meaning: "ボーイフレンド" },
+            { word: "bread", pos: "名詞", meaning: "パン" },
+            { word: "break", pos: "動詞 / 名詞", meaning: "壊す、休憩" },
+            { word: "breakfast", pos: "名詞", meaning: "朝食" },
+            { word: "bring", pos: "動詞", meaning: "持ってくる、連れてくる" },
+            { word: "brother", pos: "名詞", meaning: "兄、弟" },
+            { word: "brown", pos: "形容詞 / 名詞", meaning: "茶色の、茶色" },
+            { word: "build", pos: "動詞", meaning: "建てる、築く" },
+            { word: "building", pos: "名詞", meaning: "建物、ビル" },
+            { word: "bus", pos: "名詞", meaning: "バス" },
+            { word: "business", pos: "名詞", meaning: "ビジネス、仕事" },
+            { word: "busy", pos: "形容詞", meaning: "忙しい" },
+            { word: "but", pos: "接続詞", meaning: "しかし、だが" },
+            { word: "buy", pos: "動詞", meaning: "買う" }
+        ];
+
+        // クイズ状態変数
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let incorrectWords = [];
+        let isAnswered = false;
+
+        // DOM要素の取得
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const audioBtn = document.getElementById('audio-btn');
+
+        const qNumber = document.getElementById('q-number');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercent = document.getElementById('progress-percent');
+        const wordPos = document.getElementById('word-pos');
+        const wordText = document.getElementById('word-text');
+        const optionsContainer = document.getElementById('options-container');
+        const nextContainer = document.getElementById('next-container');
+        const currentScoreText = document.getElementById('current-score-text');
+        const wordCard = document.getElementById('word-card');
+
+        // イベントリスナー設定
+        startBtn.addEventListener('click', startQuiz);
+        restartBtn.addEventListener('click', startQuiz);
+        nextBtn.addEventListener('click', nextQuestion);
+        audioBtn.addEventListener('click', playSpeech);
+
+        // クイズ開始処理
+        function startQuiz() {
+            // リセット
+            currentIndex = 0;
+            score = 0;
+            incorrectWords = [];
+            isAnswered = false;
+            currentScoreText.textContent = "0";
+
+            // 単語リストから10問ランダム抽出
+            currentQuestions = shuffleArray([...wordList]).slice(0, 10);
+
+            // 画面切り替え
+            startScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+
+            // 1問目表示
+            showQuestion();
+        }
+
+        // 問題の表示
+        function showQuestion() {
+            isAnswered = false;
+            nextContainer.classList.add('hidden');
+            wordCard.classList.remove('animate-success', 'animate-error');
+
+            const q = currentQuestions[currentIndex];
+
+            // プログレスバー更新
+            const qNum = currentIndex + 1;
+            qNumber.textContent = qNum;
+            const progress = (qNum / 10) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressPercent.textContent = `${progress}%`;
+
+            // 単語・品詞のセット
+            wordPos.textContent = `[${q.pos}]`;
+            wordText.textContent = q.word;
+
+            // 選択肢作成 (正解1つ + 誤り3つ)
+            const options = generateOptions(q);
+            optionsContainer.innerHTML = '';
+
+            options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-4 text-left font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-all duration-150 flex items-center justify-between group active:scale-[0.99]";
+                btn.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="w-7 h-7 rounded-lg bg-white border border-slate-300 text-slate-500 font-bold text-xs flex items-center justify-center group-hover:border-brand-500 group-hover:text-brand-500 transition-colors">
+                            ${idx + 1}
+                        </span>
+                        <span class="text-sm md:text-base">${opt.meaning}</span>
+                    </div>
+                    <i class="fa-regular fa-circle text-slate-300 text-lg status-icon"></i>
+                `;
+                btn.addEventListener('click', () => checkAnswer(opt, q, btn));
+                optionsContainer.appendChild(btn);
+            });
+
+            // 自動音声再生 (操作感をスムーズに)
+            setTimeout(playSpeech, 200);
+        }
+
+        // 4択の選択肢生成
+        function generateOptions(correctItem) {
+            const wrongCandidates = wordList.filter(item => item.word !== correctItem.word);
+            const shuffledWrong = shuffleArray([...wrongCandidates]).slice(0, 3);
+            return shuffleArray([correctItem, ...shuffledWrong]);
+        }
+
+        // 正誤判定
+        function checkAnswer(selectedOpt, correctItem, clickedBtn) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const allButtons = optionsContainer.querySelectorAll('button');
+
+            if (selectedOpt.word === correctItem.word) {
+                // 正解処理
+                score++;
+                currentScoreText.textContent = score;
+                clickedBtn.className = "w-full p-4 text-left font-bold text-emerald-800 bg-emerald-50 border-2 border-emerald-500 rounded-xl flex items-center justify-between";
+                clickedBtn.querySelector('.status-icon').className = "fa-solid fa-circle-check text-emerald-500 text-xl";
+                wordCard.classList.add('animate-success');
+            } else {
+                // 不正解処理
+                incorrectWords.push(correctItem);
+                clickedBtn.className = "w-full p-4 text-left font-bold text-rose-800 bg-rose-50 border-2 border-rose-400 rounded-xl flex items-center justify-between";
+                clickedBtn.querySelector('.status-icon').className = "fa-solid fa-circle-xmark text-rose-500 text-xl";
+                wordCard.classList.add('animate-error');
+
+                // 正解のボタンをハイライト表示
+                allButtons.forEach(btn => {
+                    if (btn.textContent.includes(correctItem.meaning)) {
+                        btn.className = "w-full p-4 text-left font-bold text-emerald-800 bg-emerald-50 border-2 border-emerald-500 rounded-xl flex items-center justify-between";
+                        btn.querySelector('.status-icon').className = "fa-solid fa-circle-check text-emerald-500 text-xl";
+                    }
+                });
+            }
+
+            // 全ボタンを無効化
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.classList.remove('hover:bg-slate-100', 'active:scale-[0.99]');
+            });
+
+            // 次へボタンを表示
+            nextContainer.classList.remove('hidden');
+        }
+
+        // 次の問題に進む
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex < 10) {
+                showQuestion();
+            } else {
+                showResult();
+            }
+        }
+
+        // 結果画面の表示
+        function showResult() {
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+
+            document.getElementById('final-score').textContent = score;
+
+            // スコアに応じたコメント
+            const scoreComment = document.getElementById('score-comment');
+            if (score === 10) {
+                scoreComment.textContent = "パーフェクト！完璧です！🎉";
+            } else if (score >= 7) {
+                scoreComment.textContent = "素晴らしい英語力です！その調子！👍";
+            } else if (score >= 4) {
+                scoreComment.textContent = "惜しい！間違えた単語を復習しましょう💪";
+            } else {
+                scoreComment.textContent = "まずは何度も挑戦して基礎を固めましょう！✨";
+            }
+
+            // 復習リストの表示
+            const reviewSection = document.getElementById('review-section');
+            const reviewList = document.getElementById('review-list');
+            reviewList.innerHTML = '';
+
+            if (incorrectWords.length === 0) {
+                reviewSection.classList.add('hidden');
+            } else {
+                reviewSection.classList.remove('hidden');
+                incorrectWords.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = "bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between text-sm";
+                    div.innerHTML = `
+                        <div class="flex items-center space-x-2">
+                            <span class="font-extrabold text-slate-800">${item.word}</span>
+                            <span class="text-xs text-slate-500">[${item.pos}]</span>
+                        </div>
+                        <span class="font-medium text-slate-600">${item.meaning}</span>
+                    `;
+                    reviewList.appendChild(div);
+                });
+            }
+        }
+
+        // 発音再生 (Web Speech API)
+        function playSpeech() {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // 前の発音を停止
+                const currentWord = currentQuestions[currentIndex].word.replace(/\s*\/.*$/, ''); // "a / an" を "a" に簡易変換
+                const utterance = new SpeechSynthesisUtterance(currentWord);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9; // ややゆっくり聞き取りやすく
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 配列シャッフル関数 (Fisher-Yates算法)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+    </script>
+</body>
+</html>
